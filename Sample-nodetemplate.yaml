@@ -109,7 +109,7 @@ node_templates:
           implementation: Core-LifecycleScripts/block-deploy3.sh
           inputs:
             process:
-             args: [Sample_nodetemplate, pickfile-container, 'https://github.com/rawaqasha/eScBlocks-host/raw/master/Pick-Files.jar']
+             args: [Sample_nodetemplate, pickfile-container, 'https://github.com/WorkflowCenter-Repositories/PickFile-Task/raw/v1.0/Pick-Files.jar']
     relationships:
       - 
       - type: cloudify.relationships.contained_in
