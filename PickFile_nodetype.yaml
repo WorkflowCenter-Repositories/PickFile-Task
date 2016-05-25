@@ -1,0 +1,27 @@
+node_types:
+
+  pick-Files:
+    derived_from: workflow_service
+    properties:
+      FileNameOrIndex:
+        type: string
+        default: "."
+      PickByIndex:
+        type: string
+        default: false
+      FailIfEmpty:
+        type: boolean
+        default: true
+      #input
+      input-files:
+        type: string
+        default: file-wrapper
+      #output
+      selected-files:
+        type: string
+        default: file-wrapper
+      remaining-files:
+        type: string
+        default: file-wrapper
+
+

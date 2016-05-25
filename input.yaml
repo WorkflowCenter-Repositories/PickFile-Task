@@ -1,0 +1,5 @@
+input-dir: 'input' #input directory
+docker-image: 'dtdwd/importdir1'   #Docker image
+
+
+

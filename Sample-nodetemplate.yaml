@@ -1,0 +1,131 @@
+# Blueprint to deploy ImportDir task
+
+tosca_definitions_version: cloudify_dsl_1_0
+
+imports:
+  - http://www.getcloudify.org/spec/cloudify/3.1/types.yaml
+  - https://raw.githubusercontent.com/rawaqasha/e-sc-cloudify/master/esc_nodetypes.yaml
+  - https://github.com/WorkflowCenter-Repositories/ImportDir-Task/raw/master/PicardFile_nodetype.yaml
+
+inputs:
+
+  input-dir:
+      description: >
+        The dir path of the input files  
+      default: 'input'
+
+  input-file:
+      description: >
+        The dir path of the input files  
+      default: ''
+
+  docker-image: 
+      description: > 
+        Docker image to be used for container building
+      default: 'dtdwd/picardfile1'
+
+node_types:
+
+  docker_container:
+    derived_from: cloudify.nodes.Root
+    properties:
+      image_name:
+        type: string
+        default: { get_input: docker-image }
+      container_ID:
+        type: string
+        default: container1
+
+node_templates:
+
+  host:
+    type: cloudify.nodes.Compute
+    properties:
+      ip: localhost
+      install_agent: false
+
+  starterBlock:
+    type: cloudify.nodes.ApplicationModule
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/start-inhost.sh
+          inputs:
+            process:
+              args: [Sample_nodetemplate]
+    relationships:
+      - type: cloudify.relationships.contained_in
+        target: host
+
+  container_node:
+    type: docker_container
+    properties:
+      container_ID: pickfile-container
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/container.sh
+          inputs:
+            process:
+              args: [Sample_nodetemplate]
+    relationships:
+      - type: cloudify.relationships.contained_in
+        target: host
+      - type: cloudify.relationships.depends_on
+        target: starterBlock
+
+  Java:
+    type: spec_library
+    properties:
+      lib_name: default-jdk
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/java-install2.sh
+          inputs:
+            process:
+              args: [pickfile-container]
+    relationships:
+      - type: cloudify.relationships.contained_in
+        target: container
+
+  PickFile_node:
+    type: pick-Files
+    properties:
+      block_description: Pick files
+      block_name: Pick-Files.jar
+      block_category: File Management
+      service_type: block
+      FileNameOrIndex: Probe.PFC_0030_MSt_GAGTGG.sorted.bam       #should be changed by the user
+      PickByIndex: 'false'
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: scripts/get-input.sh
+          inputs:
+            process:
+             args: [Sample_nodetemplate, { get_input: input-dir }, { get_input: input-file }]
+        start: 
+          implementation: Core-LifecycleScripts/block-deploy3.sh
+          inputs:
+            process:
+             args: [Sample_nodetemplate, pickfile-container, 'https://github.com/rawaqasha/eScBlocks-host/raw/master/Pick-Files.jar']
+    relationships:
+      - 
+      - type: cloudify.relationships.contained_in
+        target: container 
+
+  finalBlock:
+    type: cloudify.nodes.ApplicationModule
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          implementation: scripts/final-inhost.sh
+          inputs:
+            process:
+              args: [Sample_nodetemplate]
+    relationships:
+      - type: cloudify.relationships.contained_in
+        target: host
+      - type: cloudify.relationships.depends_on
+        target: PickFile-node
